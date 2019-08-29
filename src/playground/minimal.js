@@ -45,7 +45,6 @@ class MinimalRepro {
         this.div = document.getElementById('minimal-repro');
         this.mainCanvas = document.getElementById('canvas');
         this.hiddenCanvas = document.createElement('canvas');
-        this.hiddenCanvas.width = this.hiddenCanvas.height = 256;
         this.hiddenImage = document.createElement('img');
         this.repeatCheckbox = document.getElementById('repeat-checkbox');
         this.renderButton = document.getElementById('render-button');
@@ -111,14 +110,28 @@ class MinimalRepro {
         });
     }
 
+    // from `scratch-svg-renderer`
+    getDrawRatio (context) {
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const backingStoreRatio = context.webkitBackingStorePixelRatio ||
+            context.mozBackingStorePixelRatio ||
+            context.msBackingStorePixelRatio ||
+            context.oBackingStorePixelRatio ||
+            context.backingStorePixelRatio || 1;
+        return devicePixelRatio / backingStoreRatio;
+    }
+
     // this step is normally done by the `_drawFromImage` function in `scratch-svg-renderer`.
     imgToCanvas () {
         const canvas = this.hiddenCanvas;
-        canvas.width = this.hiddenImage.width;
-        canvas.height = this.hiddenImage.height;
         const context = canvas.getContext('2d');
+        const ratio = this.getDrawRatio(context);
+        canvas.width = ratio * this.hiddenImage.width;
+        canvas.height = ratio * this.hiddenImage.height;
         context.clearRect(0, 0, canvas.width, canvas.height);
+        context.scale(ratio, ratio);
         context.drawImage(this.hiddenImage, 0, 0);
+        context.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     // this step is normally done by the `setSVG` method of `SVGSkin` in `scratch-render`.
