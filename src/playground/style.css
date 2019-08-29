@@ -2,6 +2,6 @@ body {
 	background: lightsteelblue;
 }
 
-canvas {
+canvas, img {
 	border: 3px dashed black;
 }

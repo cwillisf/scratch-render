@@ -43,6 +43,10 @@ module.exports = [
                 {
                     context: 'src/playground',
                     from: '*.+(html|css)'
+                },
+                {
+                    context: 'src/playground',
+                    from: 'minimal.js' // copy without modification
                 }
             ])
         ])
