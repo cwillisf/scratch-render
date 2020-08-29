@@ -2,6 +2,7 @@ const twgl = require('twgl.js');
 
 const Rectangle = require('./Rectangle');
 const RenderConstants = require('./RenderConstants');
+const ScratchMath = require('./util/scratch-math');
 const ShaderManager = require('./ShaderManager');
 const Skin = require('./Skin');
 const EffectTransform = require('./EffectTransform');
@@ -296,7 +297,7 @@ class Drawable {
      */
     _calculateTransform () {
         if (this._rotationTransformDirty) {
-            const rotation = (270 - this._direction) * Math.PI / 180;
+            const rotation = 270 - this._direction;
 
             // Calling rotationZ sets the destination matrix to a rotation
             // around the Z axis setting matrix components 0, 1, 4 and 5 with
@@ -306,8 +307,8 @@ class Drawable {
             // twgl assumes the last value set to the matrix was anything.
             // Drawable knows, it was another rotationZ matrix, so we can skip
             // assigning the values that will never change.
-            const c = Math.cos(rotation);
-            const s = Math.sin(rotation);
+            const c = ScratchMath.cos(rotation);
+            const s = ScratchMath.sin(rotation);
             this._rotationMatrix[0] = c;
             this._rotationMatrix[1] = s;
             // this._rotationMatrix[2] = 0;
