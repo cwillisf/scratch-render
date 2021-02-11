@@ -187,39 +187,43 @@ class SVGSkin extends Skin {
      * Set the contents of this skin to a snapshot of the provided SVG data.
      * @param {string} svgData - new SVG to use.
      * @param {Array<number>} [rotationCenter] - Optional rotation center for the SVG.
+     * @returns {Promise} - empty promise which will resolve when the load is complete (after WasAltered event)
      */
     setSVG (svgData, rotationCenter) {
-        const svgTag = loadSvgString(svgData);
-        this._svgImage = document.createElement('img');
-        const svgText = serializeSvgToString(svgTag, true /* shouldInjectFonts */);
+        return loadSvgString(svgData).then(svgTag => new Promise((resolve, reject) => {
+            this._svgImage = document.createElement('img');
+            this._svgImage.addEventListener('load', () => {
+                const {x, y, width, height} = svgTag.viewBox.baseVal;
+                this._svgMeasurements = {x, y, width, height};
 
-        this._svgImage.addEventListener('load', () => {
-            const {x, y, width, height} = svgTag.viewBox.baseVal;
-            this._svgMeasurements = {x, y, width, height};
+                if (width === 0 || height === 0) {
+                    super.setEmptyImageData();
+                    resolve();
+                }
 
-            if (width === 0 || height === 0) {
-                super.setEmptyImageData();
-                return;
-            }
+                const maxDimension = Math.ceil(Math.max(width, height));
+                let testScale = 2;
+                for (testScale; maxDimension * testScale <= MAX_TEXTURE_DIMENSION; testScale *= 2) {
+                    this._maxTextureScale = testScale;
+                }
 
-            const maxDimension = Math.ceil(Math.max(width, height));
-            let testScale = 2;
-            for (testScale; maxDimension * testScale <= MAX_TEXTURE_DIMENSION; testScale *= 2) {
-                this._maxTextureScale = testScale;
-            }
+                this.resetMIPs();
 
-            this.resetMIPs();
+                if (typeof rotationCenter === 'undefined') rotationCenter = this.calculateRotationCenter();
+                // Compensate for viewbox offset.
+                // See https://github.com/LLK/scratch-render/pull/90.
+                this._rotationCenter[0] = rotationCenter[0] - x;
+                this._rotationCenter[1] = rotationCenter[1] - y;
 
-            if (typeof rotationCenter === 'undefined') rotationCenter = this.calculateRotationCenter();
-            // Compensate for viewbox offset.
-            // See https://github.com/LLK/scratch-render/pull/90.
-            this._rotationCenter[0] = rotationCenter[0] - x;
-            this._rotationCenter[1] = rotationCenter[1] - y;
-
-            this.emit(Skin.Events.WasAltered);
-        });
-
-        this._svgImage.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+                this.emit(Skin.Events.WasAltered);
+                resolve();
+            });
+            this._svgImage.addEventListener('error', (_, e) => {
+                reject(e);
+            });
+            const svgText = serializeSvgToString(svgTag, true /* shouldInjectFonts */);
+            this._svgImage.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+        }));
     }
 
 }

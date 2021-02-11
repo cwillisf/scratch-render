@@ -350,12 +350,18 @@ class RenderWebGL extends EventEmitter {
      * @param {!string} svgData - new SVG to use.
      * @param {?Array<number>} rotationCenter Optional: rotation center of the skin. If not supplied, the center of the
      * skin will be used
+     * @param {function} onLoadComplete - optional callback to be called when the skin is done loading
      * @returns {!int} the ID for the new skin.
      */
-    createSVGSkin (svgData, rotationCenter) {
+    createSVGSkin (svgData, rotationCenter, onLoadComplete) {
         const skinId = this._nextSkinId++;
         const newSkin = new SVGSkin(skinId, this);
-        newSkin.setSVG(svgData, rotationCenter);
+        const loadPromise = newSkin.setSVG(svgData, rotationCenter);
+        if (onLoadComplete) {
+            loadPromise.then(() => {
+                onLoadComplete();
+            });
+        }
         this._allSkins[skinId] = newSkin;
         return skinId;
     }
